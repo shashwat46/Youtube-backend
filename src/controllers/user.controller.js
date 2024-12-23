@@ -18,7 +18,7 @@ const registerUser = asyncHandler( async (req,res) => {
 
 
     const {fullname, email, username, password} = req.body
-    console.log(req.body);
+    //console.log(req.body);
 
     // if(fullName === ""){
     //     throw new APIError(400, "fullname is required")   ---> NORMIE WAY TO DO THINGS
@@ -38,19 +38,28 @@ const registerUser = asyncHandler( async (req,res) => {
     if(existingUser){
         throw new APIError(409, "User with email or username already exists")
     }
+    //console.log(req.files);
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
     if(!avatarLocalPath) {
-        throw new APIError(400, "Avatar file is required")
+        console.log("Local path")
+        throw new APIError(400, "Avatar file is required(local)")
+    }
+
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length> 0){
+        coverImageLocalPath = req.files.coverImage[0].path
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
     if(!avatar) {
-        throw new APIError(400, "Avatar file is required")
+        console.log(avatarLocalPath)
+        console.log(avatar)
+        throw new APIError(400, "Avatar file is required(cloudinary)")
     }
 
    const user = await User.create({
@@ -62,7 +71,7 @@ const registerUser = asyncHandler( async (req,res) => {
         username : username.toLowerCase()
     })
 
-    const userIsCreated = await User.findById(user._id).select(
+    const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     )
 
