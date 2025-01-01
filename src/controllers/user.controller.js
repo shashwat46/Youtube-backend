@@ -4,6 +4,7 @@ import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {APIResponse} from "../utils/APIResponse.js"
 import jwt from "jsonwebtoken"
+import { upload } from "../middlewares/multer.middleware.js"
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -273,6 +274,31 @@ const updateAccountDetails = asyncHandler(async(req,res) => {
     .json(new APIResponse(200, user, "Account details updated"))
 })
 
+const updateUserAvatar = asyncHandler(async(req,res) => {
+    const avatarLocalPath = req.file?.path
+
+    if(!avatarLocalPath){
+        throw new APIError(400, "Avatar Local File Path not found")
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if(!avatar){
+        throw new APIError(400, "Error while uploading Avatar image to Cloudinary")
+    }
+
+    await User.findByIdAndUpdate(
+        req.user?._id,
+
+        {
+            $set:{
+                avatar : avatar.url
+            }
+        },
+        {new: true}
+    ).select("-password")
+})
+
 export {
     registerUser,
     loginUser,
@@ -280,5 +306,6 @@ export {
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentUser,
-    updateAccountDetails
+    updateAccountDetails,
+    updateUserAvatar
 }
