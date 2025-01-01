@@ -287,7 +287,7 @@ const updateUserAvatar = asyncHandler(async(req,res) => {
         throw new APIError(400, "Error while uploading Avatar image to Cloudinary")
     }
 
-    await User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
 
         {
@@ -297,6 +297,39 @@ const updateUserAvatar = asyncHandler(async(req,res) => {
         },
         {new: true}
     ).select("-password")
+
+    return res
+    .status(200)
+    .json(new APIResponse(200, user, "Avatar Image Updated"))
+})
+
+const updateUserCoverImage = asyncHandler(async(req,res) => {
+    const coverImageLocalPath = req.file?.path
+    
+    if(!coverImageLocalPath){
+        throw new APIError(400, "Cover image file not found")
+    }
+
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+
+    if(!coverImage){
+        throw new APIError(400, "Failed to upload Cover Image to Cloudinary")
+    }
+
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                coverImage : coverImage.url
+            }
+        },
+        {new: true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new APIResponse(200, user, "Cover Image Updated"))
 })
 
 export {
@@ -307,5 +340,6 @@ export {
     changeCurrentPassword,
     getCurrentUser,
     updateAccountDetails,
-    updateUserAvatar
+    updateUserAvatar,
+    updateUserCoverImage
 }
